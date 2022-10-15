@@ -2,7 +2,9 @@ package simply
 
 import (
 	"encoding/json"
+	"io"
 	"log"
+	"os"
 )
 
 type F = map[string]interface{}
@@ -16,13 +18,19 @@ type Logger interface {
 }
 
 func NewLogger() Logger {
+	return NewCustomLogger(os.Stderr)
+}
+
+func NewCustomLogger(out io.Writer) Logger {
 	return logger{
-		F{},
+		kvs:    F{},
+		logger: log.New(out, "", log.LstdFlags),
 	}
 }
 
 type logger struct {
-	kvs F
+	kvs    F
+	logger *log.Logger
 }
 
 func (l logger) With(fields F) Logger {
@@ -39,9 +47,9 @@ func (l logger) Info(msg string) {
 
 	jsonStr, err := json.Marshal(l.kvs)
 	if err != nil {
-		log.Print(l.kvs)
+		l.logger.Print(l.kvs)
 	} else {
-		log.Print(string(jsonStr))
+		l.logger.Print(string(jsonStr))
 	}
 }
 
@@ -51,14 +59,14 @@ func (l logger) Error(msg string) {
 
 	jsonStr, err := json.Marshal(l.kvs)
 	if err != nil {
-		log.Print(l.kvs)
+		l.logger.Print(l.kvs)
 	} else {
-		log.Print(string(jsonStr))
+		l.logger.Print(string(jsonStr))
 	}
 }
 
 func (l logger) Err(err error) Logger {
-	l.kvs["err"] = err
+	l.kvs["err"] = err.Error()
 
 	return l
 }
